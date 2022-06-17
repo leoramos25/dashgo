@@ -4,28 +4,44 @@ import Link from "next/link";
 import { Header } from "../../components/Header";
 import { Pagination } from "../../components/Pagination";
 import { Sidebar } from "../../components/Sidebar";
-import { useEffect } from "react";
-import { useQuery } from "react-query";
+import { useIsFetching, useQuery } from "react-query";
+
+type User = {
+    id: string;
+    name: string;
+    email: string;
+    createdAt: string;
+}
 
 export default function UserList() {
-    const { data, isLoading, error } = useQuery("users", async () => {
+    const FIVE_SECONDS = 1000 * 5;
+
+    const { data, isLoading, error, isFetching } = useQuery("users", async () => {
         const response = await fetch("http:localhost:3000/api/users");
         const data = await response.json();
 
-        return data;
+        const users = data.users.map((user: User) => {
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                createdAt: new Date(user.createdAt).toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric"
+                })
+            }
+        })
+
+        return users;
+    }, {
+        staleTime: FIVE_SECONDS
     });
 
     const isWideVersion = useBreakpointValue({
         base: false,
         lg: true
-    })
-
-    useEffect(() => {
-        fetch("http:localhost:3000/api/users")
-            .then(response => response.json())
-            .then(data => console.log(data));
-    }, [])
-
+    });
 
     return (
         <Box>
@@ -34,7 +50,10 @@ export default function UserList() {
                 <Sidebar />
                 <Box flex="1" borderRadius={8} bg="gray.800" p="8">
                     <Flex mb="8" justify="space-between" align="center">
-                        <Heading size="lg" fontWeight="normal">Usuários</Heading>
+                        <Heading size="lg" fontWeight="normal">
+                            Usuários
+                            {!isLoading && isFetching && <Spinner size="sm" color="gray.500" ml="4" />}
+                        </Heading>
                         <Link href="/users/create" passHref>
                             <Button
                                 as="a"
@@ -57,95 +76,41 @@ export default function UserList() {
                         <Text>Falha ao obter dados do usuário</Text>
                     ) : (
                         <>
-                        <Table colorScheme="whiteAlpha">
-                        <Thead>
-                            <Tr>
-                                <Th px={["4", "4", "6"]} color="gray.300" width="8">
-                                    <Checkbox colorScheme="pink" />
-                                </Th>
-                                <Th>
-                                    Usuário
-                                </Th>
-                                {isWideVersion && <Th>
-                                    Data de cadastro
-                                </Th>}
-                                {/* <Th width="8"></Th> */}
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            <Tr>
-                                <Td px={["4", "4", "6"]}>
-                                    <Checkbox colorScheme="pink" />
-                                </Td>
-                                <Td>
-                                    <Box>
-                                        <Text fontWeight="bold">Leonardo Ramos</Text>
-                                        <Text fontSize="small" color="gray.300">leoramosdsousa@gmail.com</Text>
-                                    </Box>
-                                </Td>
-                                {isWideVersion && <Td>25 de maio, 2021</Td>}
-                                {/* <Td>
-                                    <Button
-                                        as="a"
-                                        size="sm"
-                                        fontSize="small"
-                                        colorScheme="purple"
-                                        leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                                    >
-                                        {isWideVersion ? "Editar" : ''}
-                                    </Button>
-                                </Td> */}
-                            </Tr>
-                            <Tr>
-                                <Td px={["4", "4", "6"]}>
-                                    <Checkbox colorScheme="pink" />
-                                </Td>
-                                <Td>
-                                    <Box>
-                                        <Text fontWeight="bold">Leonardo Ramos</Text>
-                                        <Text fontSize="small" color="gray.300">leoramosdsousa@gmail.com</Text>
-                                    </Box>
-                                </Td>
-                                {isWideVersion && <Td>25 de maio, 2021</Td>}
-                                {/* <Td>
-                                    <Button
-                                        as="a"
-                                        size="sm"
-                                        fontSize="small"
-                                        colorScheme="purple"
-                                        leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                                    >
-                                        {isWideVersion ? "Editar" : null}
-                                    </Button>
-                                </Td> */}
-                            </Tr>
-                            <Tr>
-                                <Td px={["4", "4", "6"]}>
-                                    <Checkbox colorScheme="pink" />
-                                </Td>
-                                <Td>
-                                    <Box>
-                                        <Text fontWeight="bold">Leonardo Ramos</Text>
-                                        <Text fontSize="small" color="gray.300">leoramosdsousa@gmail.com</Text>
-                                    </Box>
-                                </Td>
-                                {isWideVersion && <Td>25 de maio, 2021</Td>}
-                                {/* <Td>
-                                    <Button
-                                        as="a"
-                                        size="sm"
-                                        fontSize="small"
-                                        colorScheme="purple"
-                                        leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                                    >
-                                        Editar
-                                    </Button>
-                                </Td> */}
-                            </Tr>
-                        </Tbody>
-                    </Table>
-                    <Pagination />
-                    </>
+                            <Table colorScheme="whiteAlpha">
+                                <Thead>
+                                    <Tr>
+                                        <Th px={["4", "4", "6"]} color="gray.300" width="8">
+                                            <Checkbox colorScheme="pink" />
+                                        </Th>
+                                        <Th>
+                                            Usuário
+                                        </Th>
+                                        {isWideVersion && <Th>
+                                            Data de cadastro
+                                        </Th>}
+                                    </Tr>
+                                </Thead>
+                                <Tbody>
+                                    {data.map((user: User) => {
+                                        return (
+                                            <Tr key={user.id}>
+                                                <Td px={["4", "4", "6"]}>
+                                                    <Checkbox colorScheme="pink" />
+                                                </Td>
+                                                <Td>
+                                                    <Box>
+                                                        <Text fontWeight="bold">{user.name}</Text>
+                                                        <Text fontSize="small" color="gray.300">{user.email}</Text>
+                                                    </Box>
+                                                </Td>
+                                                {isWideVersion && <Td>{user.createdAt}</Td>}
+                                            </Tr>
+                                        )
+                                    })}
+                                </Tbody>
+                            </Table>
+                            <Pagination />
+                        </>
                     )}
                 </Box>
             </Flex>
