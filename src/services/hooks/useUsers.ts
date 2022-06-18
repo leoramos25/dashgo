@@ -42,9 +42,9 @@ async function getUsers(page: number): Promise<GetUsersResponse> {
 }
 
 export function useUsers(page: number) {
-    const FIVE_SECONDS = 1000 * 5;
+    const TEN_MINUTES = 1000 * 60 * 10;
 
     return useQuery(["users", page], () => getUsers(page), {
-        staleTime: FIVE_SECONDS
+        staleTime: TEN_MINUTES
     });
 }
